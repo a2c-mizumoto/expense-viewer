@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Expense">
+  <rect width="64" height="64" rx="14" fill="#2b7a78"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="-apple-system, 'Hiragino Sans', sans-serif"
+        font-size="42" font-weight="700" fill="#ffffff">¥</text>
+</svg>

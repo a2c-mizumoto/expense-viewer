@@ -10,7 +10,7 @@ cd "$REPO_ROOT"
 
 PREFIX="expense-viewer"
 TMP_BRANCH="expense-viewer-publish"
-REMOTE_URL="git@github.com:a2c-mizumoto/expense-viewer.git"
+REMOTE_URL="https://github.com/a2c-mizumoto/expense-viewer.git"
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "✖ 作業ツリーに未コミットの変更があります。コミットしてから再実行してください。" >&2

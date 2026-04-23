@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `expense-viewer-${CACHE_VERSION}`;
 const PRECACHE = [
   './',
@@ -9,6 +9,10 @@ const PRECACHE = [
   './js/csv.js',
   './js/ui.js',
   './js/charts.js',
+  './js/capture.js',
+  './js/review.js',
+  './js/settings.js',
+  './js/receiptid.js',
   './data/categories.js',
   './manifest.json',
   './assets/favicon.svg',
@@ -32,8 +36,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    return;
+  }
+  if (req.method !== 'GET') return;
 
   if (url.origin === self.location.origin) {
     event.respondWith(

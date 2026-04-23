@@ -48,36 +48,43 @@ python3 -m http.server 8000
 5. エクスポート → ダウンロードされた CSV を再インポート → `0 件追加 / 8 件スキップ`
 6. 全削除 → 確認 → 空状態に戻る
 
-## GitHub Pages 公開手順
+## Cloudflare Pages 公開手順
 
-このリポジトリ (`ai-management`) は private の可能性が高いので、**公開用の別リポジトリを作って `expense-viewer/` だけを push する** のが安全。
+本体リポジトリ (`ai-management`) は private。`expense-viewer/` 配下だけを公開リポジトリ (`a2c-mizumoto/expense-viewer`) の main ブランチに `git subtree split` で反映し、Cloudflare Pages が自動デプロイする構成。
 
-### 手順（別リポジトリ方式）
+### 初回セットアップ
+
+1. 公開リポジトリを作成（1回のみ）
+   ```bash
+   gh repo create a2c-mizumoto/expense-viewer --public
+   ```
+2. Cloudflare Dashboard → Workers & Pages → Pages → Connect to Git → `a2c-mizumoto/expense-viewer` を選択
+3. Build command 空欄 / Build output directory `/` / Production branch `main`
+4. 環境変数を Production に登録（Encrypted 推奨）
+   - `APP_SECRET`: `openssl rand -hex 24` の出力
+   - `ANTHROPIC_API_KEY`: Anthropic Console で発行
+   - `ANTHROPIC_MODEL`: `claude-sonnet-4-6`
+   - `DAILY_LIMIT`: `30`
+5. KV namespace `expense-viewer-ratelimit` を作成し、Pages Functions に `RATELIMIT` としてバインド
+
+### 以降の公開フロー
+
+本体リポで `expense-viewer/` を編集 → コミット後、下記 1 コマンドで公開:
 
 ```bash
-# 公開用リポジトリを GitHub 上で作成（例: expense-viewer）
-gh repo create expense-viewer --public --confirm
-
-# 作業コピーを一時ディレクトリで切り出す
-cp -R ~/ai-management/expense-viewer /tmp/expense-viewer-pub
-cd /tmp/expense-viewer-pub
-git init -b main
-git add .
-git commit -m "feat: initial publish"
-git remote add origin git@github.com:<your-account>/expense-viewer.git
-git push -u origin main
-
-# GitHub のリポジトリ Settings → Pages で
-# Source: Deploy from a branch / Branch: main / Folder: / (root) を選択
+./expense-viewer/scripts/publish.sh
 ```
 
-公開 URL: `https://<your-account>.github.io/expense-viewer/`
+`git subtree split` で `expense-viewer/` 配下の履歴だけを抽出し、`a2c-mizumoto/expense-viewer` の main に `--force-with-lease` で push する。Cloudflare Pages が push を検知して自動ビルド・自動デプロイ。
+
+公開 URL: `https://expense-viewer.pages.dev/`
 
 ### 注意点
 
-- `.nojekyll` を同梱済み（GitHub Pages の Jekyll 処理を無効化）
-- Service Worker の `scope` は `./` 相対なので、プロジェクトページ（サブパス配信）でも動く
-- アプリにはサンプル CSV 以外のデータは含まれない。実データはユーザー各自の端末 `localStorage` に閉じる
+- `_headers` で `/sw.js` と `/index.html` に `Cache-Control: no-cache` を付けて SW 更新詰まりを予防
+- Service Worker の `scope` は `./` 相対。Cloudflare Pages のルート配信に対応
+- `functions/api/ocr.js` は Claude OCR 中継エンドポイント。APIキーは環境変数にのみ格納し、コードには一切含めない
+- アプリには実データは含まれない。OCR 結果とマニュアル入力はユーザー各自の端末 `localStorage` に閉じる
 
 ## 実運用データの置き場
 

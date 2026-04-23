@@ -14,9 +14,12 @@
 <body>
   <header class="app-header">
     <h1 class="app-title">Private Expense</h1>
-    <div class="month-switch">
-      <label for="month-select" class="visually-hidden">対象月</label>
-      <select id="month-select" aria-label="対象月"></select>
+    <div class="header-actions">
+      <div class="month-switch">
+        <label for="month-select" class="visually-hidden">対象月</label>
+        <select id="month-select" aria-label="対象月"></select>
+      </div>
+      <button class="icon-btn" id="settings-btn" type="button" aria-label="設定">⚙</button>
     </div>
   </header>
 
@@ -58,16 +61,23 @@
         <button class="tab-btn" role="tab" aria-selected="false" data-view="receipts" id="tab-receipts">レシート別</button>
       </div>
       <div id="list-container" class="list-container" role="tabpanel" aria-labelledby="tab-items"></div>
-      <p id="empty-state" class="empty-state" hidden>データがありません。下の「CSVインポート」からサンプルを読み込んでください。</p>
+      <p id="empty-state" class="empty-state" hidden>データがありません。下の「📷 撮影」か「CSVインポート」からデータを追加してください。</p>
     </section>
   </main>
 
+  <div class="modal-container" id="capture-modal" role="dialog" aria-modal="true" hidden></div>
+  <div class="modal-container" id="settings-modal" role="dialog" aria-modal="true" hidden></div>
+
   <footer class="app-footer">
-    <label class="btn btn-primary" for="import-input">
-      CSVインポート
+    <label class="btn btn-primary" for="camera-input">
+      📷 撮影
+      <input id="camera-input" type="file" accept="image/*" capture="environment" hidden />
+    </label>
+    <label class="btn" for="import-input">
+      CSV
       <input id="import-input" type="file" accept=".csv,text/csv" hidden />
     </label>
-    <button class="btn" id="export-btn" type="button">CSVエクスポート</button>
+    <button class="btn" id="export-btn" type="button">書出</button>
     <button class="btn btn-danger" id="clear-btn" type="button">全削除</button>
   </footer>
 

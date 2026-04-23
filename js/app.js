@@ -9,6 +9,7 @@ import {
   renderList,
   showToast,
 } from './ui.js';
+import { initCapture, openSettings, openCaptureFlow } from './capture.js';
 
 const state = {
   currentMonth: 'all',
@@ -50,6 +51,20 @@ function bindEvents() {
       container.setAttribute('aria-labelledby', btn.id);
       refresh();
     });
+  });
+
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    openSettings();
+  });
+
+  document.getElementById('camera-input').addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await openCaptureFlow(file);
+    } finally {
+      e.target.value = '';
+    }
   });
 
   document.getElementById('import-input').addEventListener('change', async (e) => {
@@ -114,5 +129,6 @@ function registerServiceWorker() {
 }
 
 bindEvents();
+initCapture({ onRefresh: refresh });
 refresh();
 registerServiceWorker();

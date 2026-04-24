@@ -77,7 +77,7 @@ python3 -m http.server 8000
 
 `git subtree split` で `expense-viewer/` 配下の履歴だけを抽出し、`a2c-mizumoto/expense-viewer` の main に `--force-with-lease` で push する。Cloudflare Pages が push を検知して自動ビルド・自動デプロイ。
 
-公開 URL: `https://expense-viewer.pages.dev/`
+公開 URL: `https://expense-viewer-26j.pages.dev/`
 
 ### 注意点
 
@@ -96,30 +96,59 @@ python3 -m http.server 8000
 expense-viewer/
 ├── index.html
 ├── manifest.json
-├── sw.js
+├── sw.js                       # v2: /api/ 除外 + キャッシュバージョン
+├── _headers                    # Cloudflare Pages: /sw.js, /index.html を no-cache
 ├── .nojekyll
 ├── css/styles.css
 ├── js/
-│   ├── app.js          # エントリ・イベント配線
-│   ├── store.js        # localStorage 永続化
-│   ├── csv.js          # CSV パース / 生成
-│   ├── ui.js           # DOM レンダリング
-│   └── charts.js       # Chart.js ラッパ
+│   ├── app.js                  # エントリ・イベント配線
+│   ├── store.js                # localStorage 永続化
+│   ├── csv.js                  # CSV パース / 生成
+│   ├── ui.js                   # DOM レンダリング
+│   ├── charts.js               # Chart.js ラッパ
+│   ├── capture.js              # 撮影 → リサイズ → OCR 呼出 → 確認UIディスパッチ
+│   ├── review.js               # OCR 結果の確認・編集UI
+│   ├── settings.js             # APP_SECRET を localStorage に保持
+│   └── receiptid.js            # R-YYYYMMDD-HHMMSS 採番
+├── functions/api/
+│   ├── ocr.js                  # Pages Functions: Claude OCR 中継
+│   └── _lib/
+│       ├── prompt.js           # system prompt
+│       ├── categories.js       # 12カテゴリ定義（data/categories.js と手動同期）
+│       └── ratelimit.js        # Workers KV による日次レート制限
+├── scripts/
+│   └── publish.sh              # git subtree split + 公開リポ push
 ├── data/
-│   ├── categories.js   # 12カテゴリ定義
-│   └── sample.csv      # 動作確認用
+│   ├── categories.js           # 12カテゴリ定義
+│   └── sample.csv              # 動作確認用
 └── assets/
     ├── favicon.svg
-    ├── icon-192.png    # PWA アイコン（暫定・単色）
+    ├── icon-192.png            # PWA アイコン（暫定・単色）
     └── icon-512.png
 ```
 
-## Phase 2 拡張余地（未実装）
+## Phase 2a 完了（2026-04-24）
 
-- カメラ撮影 → Claude API で商品単位 OCR + 分類 → フォーム自動入力
-- 店舗 × 商品名から推定カテゴリを学習する辞書（同じ localStorage に相乗り）
-- 食品カテゴリに四毒フラグを追加してハイライト
-- データ層を IndexedDB へ移行（`store.js` のインターフェースはそのまま）
+iPhone PWA から「撮影 → Claude OCR → 確認編集 → 自動登録」までがワンフローで動く。
+
+- カメラ起動: `<input capture="environment">` で iPhone Safari ネイティブカメラ起動
+- OCR: Cloudflare Pages Functions `/api/ocr` 経由で Claude Sonnet 4.6 (`claude-sonnet-4-6`) を呼び出し
+- 認証: URL secret 方式（`/api/ocr?key=...`）。`APP_SECRET` は Cloudflare Pages 環境変数にのみ存在し、端末側は localStorage 保持
+- レート制限: Workers KV `RATELIMIT` で日次カウント（デフォルト 30 req/日）
+- データ構造: 1 レシート = 複数商品で同一 `receiptId` (`R-YYYYMMDD-HHMMSS`) を共有
+
+### iPhone 初回セットアップ
+
+1. Safari で `https://expense-viewer-26j.pages.dev/` を開き「ホーム画面に追加」
+2. アプリ起動 → ヘッダの ⚙ ボタンで設定モーダルを開く
+3. `APP_SECRET` を貼り付けて保存（以降は端末 localStorage に保持）
+4. フッター「📷 撮影」でレシート撮影 → OCR 待ち（5〜15 秒） → 確認画面で修正 → 登録
+
+## Phase 2b〜2d 拡張余地（未実装）
+
+- **2b**: 店舗 × 商品名から推定カテゴリを学習する辞書（localStorage 相乗り）
+- **2c**: 食品カテゴリに四毒フラグを追加してハイライト
+- **2d**: データ層を IndexedDB へ移行（画像保存が必要になったとき。`store.js` のインターフェースはそのまま差し替え可能）
 
 ## アイコン差し替え
 

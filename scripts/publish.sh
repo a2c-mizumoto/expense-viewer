@@ -23,7 +23,12 @@ echo "→ subtree split: $PREFIX → $TMP_BRANCH"
 git subtree split --prefix="$PREFIX" -b "$TMP_BRANCH"
 
 echo "→ push: $TMP_BRANCH → $REMOTE_URL main"
-git push "$REMOTE_URL" "$TMP_BRANCH":main --force-with-lease
+EXPECTED="$(git ls-remote "$REMOTE_URL" main | awk '{print $1}')"
+if [ -z "$EXPECTED" ]; then
+  echo "✖ $REMOTE_URL main が取得できません。初回 push なら一度手動で通してください。" >&2
+  exit 1
+fi
+git push "$REMOTE_URL" "$TMP_BRANCH":main --force-with-lease=main:"$EXPECTED"
 
 git branch -D "$TMP_BRANCH"
 

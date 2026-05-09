@@ -1,7 +1,7 @@
 import { newReceiptId } from './receiptid.js';
 import { getApiKey, setApiKey, clearApiKey } from './settings.js';
 import { renderReview } from './review.js';
-import { addMany } from './store.js';
+import { addMany, clearAll, getAll } from './store.js';
 import { showToast } from './ui.js';
 
 const MAX_EDGE = 2000;
@@ -10,6 +10,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 let captureRoot = null;
 let settingsRoot = null;
 let refreshCallback = () => {};
+let pendingBlob = null;
 
 export function initCapture({ onRefresh } = {}) {
   captureRoot = document.getElementById('capture-modal');
@@ -29,6 +30,12 @@ export function openSettings() {
         <input type="password" id="settings-api-key" autocomplete="off" spellcheck="false" value="${escapeAttr(current)}" />
       </label>
       <p class="modal-help">Cloudflare Pages の APP_SECRET を貼り付けてください。この端末の localStorage にのみ保存されます。</p>
+      <hr class="modal-divider" />
+      <section class="modal-danger-zone">
+        <h3 class="modal-subtitle">データ管理</h3>
+        <p class="modal-help">保存済みのレシート・商品データをすべて削除します。元に戻せません。</p>
+        <button class="btn btn-danger" id="settings-clear-all" type="button">全データを削除</button>
+      </section>
       <div class="modal-footer">
         <button class="btn btn-danger" id="settings-clear" type="button">消去</button>
         <button class="btn" id="settings-cancel" type="button">キャンセル</button>
@@ -48,6 +55,18 @@ export function openSettings() {
     const val = settingsRoot.querySelector('#settings-api-key').value;
     setApiKey(val);
     showToast('APIキーを保存しました');
+    closeSettings();
+  });
+  settingsRoot.querySelector('#settings-clear-all').addEventListener('click', () => {
+    const all = getAll();
+    if (all.length === 0) {
+      showToast('削除するデータはありません');
+      return;
+    }
+    if (!confirm(`保存済みの ${all.length} 件をすべて削除します。よろしいですか？`)) return;
+    clearAll();
+    refreshCallback();
+    showToast('すべてのデータを削除しました');
     closeSettings();
   });
 }
@@ -105,6 +124,7 @@ function renderPreview({ dataUrl, blob, receiptId }) {
       openSettings();
       return;
     }
+    pendingBlob = blob;
     renderLoading('OCR 処理中…最大 20 秒ほどかかります');
     try {
       const ocr = await callOcr(blob, receiptId, apiKey);
@@ -161,8 +181,10 @@ function confirmAndAdd(items, receiptId) {
     return;
   }
   const { added, skipped } = addMany(items);
+  const imgOk = downloadReceiptImage(pendingBlob, receiptId);
   const parts = [`${added} 件追加`];
   if (skipped > 0) parts.push(`${skipped} 件スキップ`);
+  if (!imgOk) parts.push('画像保存失敗');
   showToast(parts.join(' / '));
   refreshCallback();
   closeCapture();
@@ -172,6 +194,7 @@ function closeCapture() {
   if (!captureRoot) return;
   captureRoot.hidden = true;
   captureRoot.innerHTML = '';
+  pendingBlob = null;
 }
 
 async function normalizeImage(file) {
@@ -212,6 +235,24 @@ function loadImage(src) {
 async function dataUrlToBlob(url) {
   const res = await fetch(url);
   return await res.blob();
+}
+
+function downloadReceiptImage(blob, receiptId) {
+  if (!blob) return false;
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${receiptId}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  } catch (err) {
+    console.error('image download failed:', err);
+    return false;
+  }
 }
 
 function escapeHtml(s) {

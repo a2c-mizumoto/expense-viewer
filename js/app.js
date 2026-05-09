@@ -1,4 +1,4 @@
-import { getAll, addMany, clearAll } from './store.js';
+import { getAll, addMany } from './store.js';
 import { parseCSV, downloadCSV } from './csv.js';
 import { renderCharts } from './charts.js';
 import {
@@ -104,18 +104,6 @@ function bindEvents() {
     showToast(`${all.length} 件を書き出しました`);
   });
 
-  document.getElementById('clear-btn').addEventListener('click', () => {
-    const all = getAll();
-    if (all.length === 0) {
-      showToast('削除するデータはありません');
-      return;
-    }
-    if (!confirm(`保存済みの ${all.length} 件をすべて削除します。よろしいですか？`)) return;
-    clearAll();
-    state.currentMonth = 'all';
-    refresh();
-    showToast('すべてのデータを削除しました');
-  });
 }
 
 function registerServiceWorker() {

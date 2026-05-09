@@ -61,7 +61,7 @@
         <button class="tab-btn" role="tab" aria-selected="false" data-view="receipts" id="tab-receipts">レシート別</button>
       </div>
       <div id="list-container" class="list-container" role="tabpanel" aria-labelledby="tab-items"></div>
-      <p id="empty-state" class="empty-state" hidden>データがありません。下の「📷 撮影」か「CSVインポート」からデータを追加してください。</p>
+      <p id="empty-state" class="empty-state" hidden>データがありません。下の「📷 撮影」か「読込」からデータを追加してください。</p>
     </section>
   </main>
 
@@ -69,16 +69,13 @@
   <div class="modal-container" id="settings-modal" role="dialog" aria-modal="true" hidden></div>
 
   <footer class="app-footer">
-    <label class="btn btn-primary" for="camera-input">
-      📷 撮影
-      <input id="camera-input" type="file" accept="image/*" capture="environment" hidden />
-    </label>
-    <label class="btn" for="import-input">
-      CSV
+    <label class="btn" for="import-input">読込
       <input id="import-input" type="file" accept=".csv,text/csv" hidden />
     </label>
     <button class="btn" id="export-btn" type="button">書出</button>
-    <button class="btn btn-danger" id="clear-btn" type="button">全削除</button>
+    <label class="btn btn-primary" for="camera-input">📷 撮影
+      <input id="camera-input" type="file" accept="image/*" capture="environment" hidden />
+    </label>
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
